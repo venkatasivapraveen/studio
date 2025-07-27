@@ -21,7 +21,10 @@ export type RetirementPlanFormData = z.infer<typeof RetirementPlanFormSchema>;
 export interface ProjectionEntry {
   year: number;
   openingBalance: number;
-  investmentReturns: number;
   yearlyExpenses: number;
   closingBalance: number;
+  debtFundBalance: number;
+  passiveMFBalance: number;
+  hybridMFBalance: number;
+  totalInterest: number;
 }

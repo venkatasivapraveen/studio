@@ -1,7 +1,7 @@
 'use client';
 
 import type { ProjectionEntry } from "@/lib/types";
-import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 interface ProjectionChartProps {
   data: ProjectionEntry[];
@@ -19,7 +19,21 @@ export default function ProjectionChart({ data }: ProjectionChartProps) {
     return (
         <div className="h-[400px] w-full">
             <ResponsiveContainer>
-                <LineChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                <AreaChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                    <defs>
+                        <linearGradient id="colorDebt" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--chart-1))" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="hsl(var(--chart-1))" stopOpacity={0}/>
+                        </linearGradient>
+                        <linearGradient id="colorPassive" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--chart-2))" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="hsl(var(--chart-2))" stopOpacity={0}/>
+                        </linearGradient>
+                         <linearGradient id="colorHybrid" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="hsl(var(--chart-3))" stopOpacity={0.8}/>
+                            <stop offset="95%" stopColor="hsl(var(--chart-3))" stopOpacity={0}/>
+                        </linearGradient>
+                    </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                     <XAxis 
                         dataKey="year" 
@@ -30,6 +44,7 @@ export default function ProjectionChart({ data }: ProjectionChartProps) {
                         stroke="hsl(var(--muted-foreground))"
                         fontSize={12}
                         tickFormatter={(value) => `${value} L`}
+                        stackAll
                     />
                     <Tooltip
                         contentStyle={{
@@ -40,12 +55,13 @@ export default function ProjectionChart({ data }: ProjectionChartProps) {
                         labelStyle={{
                            color: 'hsl(var(--foreground))'
                         }}
-                        formatter={(value: number) => [`${value.toFixed(2)} Lacs`, undefined]}
+                        formatter={(value: number, name: string) => [`${value.toFixed(2)} Lacs`, name]}
                     />
                     <Legend wrapperStyle={{fontSize: "12px"}}/>
-                    <Line type="monotone" dataKey="closingBalance" name="Closing Balance (Lacs)" stroke="hsl(var(--primary))" strokeWidth={2} dot={false} />
-                    <Line type="monotone" dataKey="yearlyExpenses" name="Yearly Expenses (Lacs)" stroke="hsl(var(--destructive))" strokeWidth={2} dot={false} />
-                </LineChart>
+                    <Area type="monotone" dataKey="debtFundBalance" name="Debt Fund" stackId="1" stroke="hsl(var(--chart-1))" fill="url(#colorDebt)" />
+                    <Area type="monotone" dataKey="passiveMFBalance" name="Passive MF" stackId="1" stroke="hsl(var(--chart-2))" fill="url(#colorPassive)" />
+                    <Area type="monotone" dataKey="hybridMFBalance" name="Hybrid MF" stackId="1" stroke="hsl(var(--chart-3))" fill="url(#colorHybrid)" />
+                </AreaChart>
             </ResponsiveContainer>
         </div>
     );

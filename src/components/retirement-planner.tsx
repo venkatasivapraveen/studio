@@ -59,36 +59,66 @@ export default function RetirementPlanner() {
 
   const calculateProjection = (data: RetirementPlanFormData): ProjectionEntry[] => {
     const results: ProjectionEntry[] = [];
-    let openingBalance = data.retirementCorpus;
+    let debtFundBalance = data.retirementCorpus * (data.debtFundAllocation / 100);
+    let passiveMFBalance = data.retirementCorpus * (data.passiveMFAllocation / 100);
+    let hybridMFBalance = data.retirementCorpus * (data.hybridMFAllocation / 100);
     let currentYearlyExpenses = data.yearlyExpenses;
 
-    const weightedReturn =
-      (data.debtFundAllocation / 100) * (data.debtFundYield / 100) +
-      (data.passiveMFAllocation / 100) * (data.passiveMFYield / 100) +
-      (data.hybridMFAllocation / 100) * (data.hybridMFYield / 100);
-
     for (let year = 1; year <= data.yearsPlanned; year++) {
+      const openingBalance = debtFundBalance + passiveMFBalance + hybridMFBalance;
       if (openingBalance <= 0) {
-        results.push({ year, openingBalance: 0, investmentReturns: 0, yearlyExpenses: 0, closingBalance: 0 });
+        results.push({ year, openingBalance: 0, yearlyExpenses: currentYearlyExpenses, closingBalance: 0, debtFundBalance: 0, passiveMFBalance: 0, hybridMFBalance: 0, totalInterest: 0 });
+        currentYearlyExpenses *= (1 + data.inflationRate / 100);
         continue;
       }
       
-      const investmentReturns = openingBalance * weightedReturn;
-      const closingBalance = openingBalance + investmentReturns - currentYearlyExpenses;
+      const debtInterest = debtFundBalance * (data.debtFundYield / 100);
+      const passiveInterest = passiveMFBalance * (data.passiveMFYield / 100);
+      const hybridInterest = hybridMFBalance * (data.hybridMFYield / 100);
+      const totalInterest = debtInterest + passiveInterest + hybridInterest;
+      
+      debtFundBalance += debtInterest;
+      passiveMFBalance += passiveInterest;
+      hybridMFBalance += hybridInterest;
+
+      let expenseToMeet = currentYearlyExpenses;
+      
+      const debtWithdrawal = Math.min(expenseToMeet, debtFundBalance);
+      debtFundBalance -= debtWithdrawal;
+      expenseToMeet -= debtWithdrawal;
+      
+      let passiveWithdrawal = 0;
+      if(expenseToMeet > 0) {
+        passiveWithdrawal = Math.min(expenseToMeet, passiveMFBalance);
+        passiveMFBalance -= passiveWithdrawal;
+        expenseToMeet -= passiveWithdrawal;
+      }
+
+      let hybridWithdrawal = 0;
+      if(expenseToMeet > 0) {
+        hybridWithdrawal = Math.min(expenseToMeet, hybridMFBalance);
+        hybridMFBalance -= hybridWithdrawal;
+        expenseToMeet -= hybridWithdrawal;
+      }
+
+      const closingBalance = debtFundBalance + passiveMFBalance + hybridMFBalance;
 
       results.push({
         year,
         openingBalance: parseFloat(openingBalance.toFixed(2)),
-        investmentReturns: parseFloat(investmentReturns.toFixed(2)),
         yearlyExpenses: parseFloat(currentYearlyExpenses.toFixed(2)),
         closingBalance: parseFloat(closingBalance.toFixed(2)),
+        debtFundBalance: parseFloat(debtFundBalance.toFixed(2)),
+        passiveMFBalance: parseFloat(passiveMFBalance.toFixed(2)),
+        hybridMFBalance: parseFloat(hybridMFBalance.toFixed(2)),
+        totalInterest: parseFloat(totalInterest.toFixed(2)),
       });
 
-      openingBalance = closingBalance > 0 ? closingBalance : 0;
       currentYearlyExpenses *= (1 + data.inflationRate / 100);
     }
     return results;
   };
+
 
   const onSubmit = (data: RetirementPlanFormData) => {
     const projectionResult = calculateProjection(data);
